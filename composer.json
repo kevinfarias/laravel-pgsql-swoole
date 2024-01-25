@@ -1,0 +1,31 @@
+{
+	"name": "kevinfarias/laravel-pgsql-swoole",
+	"description": "PGSQL with Swoole integration for Laravel framework ",
+	"type": "library",
+	"homepage": "https://github.com/kevinfarias/laravel-pgsql-swoole",
+	"authors": [
+		{
+			"name": "Kevin Farias",
+			"email": "kevin.farias.dev@gmail.com",
+			"homepage": "https://github.com/kevinfarias",
+			"role": "Developer"
+		}
+	],
+	"require": {
+		"php": ">=8.1",
+		"illuminate/database": ">= 10.0",
+		"illuminate/support": ">= 10.0"
+	},
+	"autoload": {
+		"classmap": [
+			"src"
+		]
+	},
+	"extra": {
+		"laravel": {
+			"providers": [
+				"KevinFarias\\PgSqlSwoole\\PgSqlSwooleServiceProvider"
+			]
+		}
+	}
+}
