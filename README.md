@@ -1,12 +1,12 @@
 ## PgSqlSwoole integration for Laravel Framework
 This integration allows the use of <b>PgSqlSwoole</b> php driver function with Laravel framework instead of PDO.<br>
-It emulates PDO class used by Laravel.
-The advantage is to use non blocking PostgreSQL connection in Laravel Octane.
-Very experimental. Do not use in production.
-Heavily inspired in: https://github.com/andreossido/laravel-odbc
-
+It emulates PDO class used by Laravel.<br>
+The advantage is to use non-blocking PostgreSQL connection in Laravel Octane.<br>
+Very experimental. Do not use in production.<br>
+Heavily inspired in: https://github.com/andreossido/laravel-odbc<br>
+<br><br>
 ### # How to install
-> `composer require abram/laravel-odbc` To add source in your project
+> `composer require kevinfarias/laravel-pgsql-swoole` To add source in your project
 
 ### # Usage Instructions
 It's very simple to configure:
