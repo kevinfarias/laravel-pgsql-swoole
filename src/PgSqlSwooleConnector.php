@@ -15,6 +15,11 @@ use Illuminate\Support\Arr;
 class PgSqlSwooleConnector extends Connector implements ConnectorInterface
 {
 
+    private function buildPostgresConnectionStr($host, $port, $database, $username, $password): string
+    {
+        return "host=$host port=$port dbname=$database user=$username password=$password";
+    }
+
     /**
      * Establish a database connection.
      *
@@ -28,9 +33,15 @@ class PgSqlSwooleConnector extends Connector implements ConnectorInterface
     {
         $options = $this->getOptions($config);
 
-        $dsn = Arr::get($config, 'dsn');
+        $host = Arr::get($config, 'host');
+        $port = Arr::get($config, 'port', 5432);
+        $database = Arr::get($config, 'database');
+        $username = Arr::get($config, 'username');
+        $password = Arr::get($config, 'password');
+        $url = Arr::get($config, 'url');
+        $connectionStr = $url ?: $this->buildPostgresConnectionStr($host, $port, $database, $username, $password);
 
-        $connection = $this->createConnection($dsn, $config, $options);
+        $connection = $this->createConnection($connectionStr, $config, $options);
 
         return $connection;
     }
@@ -46,6 +57,6 @@ class PgSqlSwooleConnector extends Connector implements ConnectorInterface
      */
     protected function createPdoConnection($dsn, $username, $password, $options)
     {
-        return new PgSqlSwoolePdo($dsn, $username, $password);
+        return new PgSqlSwoolePdo($dsn, $options);
     }
 }

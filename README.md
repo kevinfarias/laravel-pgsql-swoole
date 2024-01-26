@@ -1,6 +1,9 @@
-## ODBC integration for Laravel Framework
-This integration allows the use of <b>odbc_*</b> php function with Laravel framework instead of PDO.<br>
+## PgSqlSwoole integration for Laravel Framework
+This integration allows the use of <b>PgSqlSwoole</b> php driver function with Laravel framework instead of PDO.<br>
 It emulates PDO class used by Laravel.
+The advantage is to use non blocking PostgreSQL connection in Laravel Octane.
+Very experimental. Do not use in production.
+Heavily inspired in: https://github.com/andreossido/laravel-odbc
 
 ### # How to install
 > `composer require abram/laravel-odbc` To add source in your project
@@ -10,9 +13,8 @@ It's very simple to configure:
 
 **1) Add database to database.php file**
 ```PHP
-'odbc-connection-name' => [
-    'driver' => 'odbc',
-    'dsn' => 'OdbcConnectionName',
+'pgsql-swoole' => [
+    'driver' => 'pgsql-swoole',
     'database' => 'DatabaseName',
     'host' => '127.0.0.1',
     'username' => 'username',
@@ -24,7 +26,7 @@ It's very simple to configure:
 ```PHP
 'providers' => [
   ...
-  Abram\Odbc\ODBCServiceProvider::class
+  KevinFarias\PgSqlSwoole\PgSqlSwooleServiceProvider::class
 ]
 ```
 
@@ -32,16 +34,16 @@ It's very simple to configure:
 You can use Laravel, Eloquent ORM and other Illuminate's components as usual.
 ```PHP
 # Facade
-$books = DB::connection('odbc-connection-name')->table('books')->where('Author', 'Abram Andrea')->get();
+$books = DB::connection('pgsql-swoole')->table('books')->where('Author', 'Kevin Farias')->get();
 
 # ORM
-$books = Book::where('Author', 'Abram Andrea')->get();
+$books = Book::where('Author', 'Kevin Farias')->get();
 ```
 
 ### # Custom getLastInsertId() function
-If you want to provide a custom <b>getLastInsertId()</b> function, you can extends *ODBCProcessor* class and override function.<br>
+If you want to provide a custom <b>getLastInsertId()</b> function, you can extends *PgSqlSwooleProcessor* class and override function.<br>
 ```PHP
-class CustomProcessor extends ODBCProcessor
+class CustomProcessor extends PgSqlSwooleProcessor
 {
     /**
      * @param Builder $query
@@ -58,9 +60,8 @@ class CustomProcessor extends ODBCProcessor
 ### # Custom Processor / QueryGrammar / SchemaGrammar
 To use another class instead default one you can update your connection in:
 ```PHP
-'odbc-connection-name' => [
-    'driver' => 'odbc',
-    'dsn' => 'OdbcConnectionName',
+'pgsql-swoole' => [
+    'driver' => 'pgsql-swoole',
     'database' => 'DatabaseName',
     'host' => '127.0.0.1',
     'username' => 'username',

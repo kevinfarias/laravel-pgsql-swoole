@@ -9,22 +9,25 @@
 namespace KevinFarias\PgSqlSwoole;
 
 use PDOStatement;
+use Swoole\Coroutine\PostgreSQLStatement;
 
 class PgSqlSwoolePdoStatement extends PDOStatement
 {
-    protected $query;
-    protected $params = [];
-    protected $statement;
+    protected string $query;
+    protected array $params = [];
+    protected PostgreSQLStatement $statement;
 
     public function __construct($conn, $query)
     {
         $this->query = preg_replace('/(?<=\s|^):[^\s:]++/um', '?', $query);
 
-        $this->params = $this->getParamsFromQuery($query);
+        // $this->params = $this->getParamsFromQuery($query);
+        $this->params = [];
 
-        $this->statement = odbc_prepare($conn, $this->query);
+        $this->statement = $conn->prepare($this->query);
     }
 
+    /*
     protected function getParamsFromQuery($qry)
     {
         $params = [];
@@ -39,34 +42,30 @@ class PgSqlSwoolePdoStatement extends PDOStatement
 
         return $params;
     }
+    */
 
     public function rowCount()
     {
-        return odbc_num_rows($this->statement);
+        return $this->statement->numRows();
     }
 
-    public function bindValue($param, $val, $ignore = null)
+    public function bindValue(string|int $param, mixed $val, $ignore = null)
     {
         $this->params[$param] = $val;
     }
 
     public function execute($ignore = null)
     {
-        odbc_execute($this->statement, $this->params);
-        $this->params = [];
+        return $this->statement->execute($this->params);
     }
 
     public function fetchAll($how = NULL, $class_name = NULL, $ctor_args = NULL)
     {
-        $records = [];
-        while ($record = $this->fetch()) {
-            $records[] = $record;
-        }
-        return $records;
+        return $this->statement->fetchAll();
     }
 
     public function fetch($option = null, $ignore = null, $ignore2 = null)
     {
-        return odbc_fetch_array($this->statement);
+        return $this->statement->fetchArray();
     }
 }

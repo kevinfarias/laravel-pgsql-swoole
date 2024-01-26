@@ -10,14 +10,17 @@ namespace KevinFarias\PgSqlSwoole;
 
 use Exception;
 use PDO;
+use Swoole\Coroutine\PostgreSQL;
+use Swoole\Coroutine\PostgreSQLStatement;
 
 class PgSqlSwoolePdo extends PDO
 {
     protected $connection;
 
-    public function __construct($dsn, $username, $passwd, $options = [])
+    public function __construct($dsn, $options = [])
     {
-        $this->setConnection(odbc_connect($dsn, $username, $passwd));
+        $pg = new PostgreSQL();
+        $this->setConnection($pg->connect($dsn));
     }
 
     public function exec($query)
@@ -25,15 +28,15 @@ class PgSqlSwoolePdo extends PDO
         return $this->prepare($query)->execute();
     }
 
-    public function prepare($statement, $driver_options = null)
+    public function prepare(string $statement, $driver_options = null): PostgreSQLStatement|false
     {
-        return new ODBCPdoStatement($this->getConnection(), $statement);
+        return $this->getConnection()->prepare($statement);
     }
 
     /**
      * @return mixed
      */
-    public function getConnection()
+    public function getConnection(): PostgreSQL
     {
         return $this->connection;
     }
@@ -56,20 +59,18 @@ class PgSqlSwoolePdo extends PDO
         throw new Exception("Error, you must override this method!");
     }
 
-    public function commit()
+    public function commit(): void
     {
-        return odbc_commit($this->getConnection());
+        $this->getConnection()->query('COMMIT');
     }
 
-    public function rollBack()
+    public function rollBack(): void
     {
-        $rollback = odbc_rollback($this->getConnection());
-        odbc_autocommit($this->getConnection(), true);
-        return $rollback;
+        $this->getConnection()->query('ROLLBACK');
     }
 
-    public function beginTransaction()
+    public function beginTransaction(): void
     {
-        odbc_autocommit($this->getConnection(), false);
+        $this->getConnection()->query('BEGIN');
     }
 }
