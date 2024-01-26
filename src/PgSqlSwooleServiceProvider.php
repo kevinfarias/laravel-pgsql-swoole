@@ -17,7 +17,7 @@ class PgSqlSwooleServiceProvider extends ServiceProvider
     {
         $this->app->resolving('db', function ($db) {
             /** @var DatabaseManager $db */
-            $db->extend('odbc', function ($config, $name) {
+            $db->extend('pgsql-swoole', function ($config, $name) {
                 $pdoConnection = (new PgSqlSwooleConnector())->connect($config);
                 $connection = new PgSqlSwooleConnection($pdoConnection, $config['database'], isset($config['prefix']) ? $config['prefix'] : '', $config);
                 return $connection;

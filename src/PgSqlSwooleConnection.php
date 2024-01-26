@@ -34,6 +34,6 @@ class PgSqlSwooleConnection extends Connection
         $processor = $this->getConfig('options.processor');
         if ($processor)
             return new $processor;
-        return new ODBCProcessor;
+        return new PgSqlSwooleProcessor();
     }
 }

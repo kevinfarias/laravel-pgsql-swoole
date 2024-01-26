@@ -20,7 +20,13 @@ class PgSqlSwoolePdo extends PDO
     public function __construct($dsn, $options = [])
     {
         $pg = new PostgreSQL();
-        $this->setConnection($pg->connect($dsn));
+
+        $connect = $pg->connect($dsn);
+        if (!$connect) {
+            throw new Exception("Error connecting to PostgreSQL server.");
+        }
+
+        $this->setConnection($pg);
     }
 
     public function exec($query)
@@ -28,9 +34,13 @@ class PgSqlSwoolePdo extends PDO
         return $this->prepare($query)->execute();
     }
 
-    public function prepare(string $statement, $driver_options = null): PostgreSQLStatement|false
+    public function prepare(string $statement, $driver_options = null): PgSqlSwoolePdoStatement|false
     {
-        return $this->getConnection()->prepare($statement);
+        $prepared = new PgSqlSwoolePdoStatement($this->getConnection(), $statement);
+        if (!$prepared) {
+            throw new Exception("Error preparing statement.");
+        }
+        return $prepared;
     }
 
     /**

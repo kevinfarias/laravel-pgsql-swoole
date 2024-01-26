@@ -10,12 +10,14 @@ namespace KevinFarias\PgSqlSwoole;
 
 use PDOStatement;
 use Swoole\Coroutine\PostgreSQLStatement;
+use PDO;
 
 class PgSqlSwoolePdoStatement extends PDOStatement
 {
     protected string $query;
     protected array $params = [];
     protected PostgreSQLStatement $statement;
+    private $fetchMode;
 
     public function __construct($conn, $query)
     {
@@ -59,13 +61,24 @@ class PgSqlSwoolePdoStatement extends PDOStatement
         return $this->statement->execute($this->params);
     }
 
-    public function fetchAll($how = NULL, $class_name = NULL, $ctor_args = NULL)
+    public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args)
     {
-        return $this->statement->fetchAll();
+        $mode = match ($mode ?? $this->fetchMode) {
+            PDO::FETCH_ASSOC => SW_PGSQL_ASSOC,
+            PDO::FETCH_NUM => SW_PGSQL_NUM,
+            PDO::FETCH_BOTH => SW_PGSQL_BOTH,
+            default => SW_PGSQL_ASSOC,
+        };
+        return $this->statement->fetchAll($mode);
     }
 
     public function fetch($option = null, $ignore = null, $ignore2 = null)
     {
         return $this->statement->fetchArray();
+    }
+
+    public function setFetchMode(int $mode, mixed ...$args): void
+    {
+        $this->fetchMode = $mode;
     }
 }
