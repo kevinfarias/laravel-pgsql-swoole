@@ -16,6 +16,7 @@ use Swoole\Coroutine\PostgreSQLStatement;
 class PgSqlSwoolePdo extends PDO
 {
     protected $connection;
+    protected ?PgSqlSwoolePdoStatement $prepared;
 
     public function __construct($dsn, $options = [])
     {
@@ -40,6 +41,8 @@ class PgSqlSwoolePdo extends PDO
         if (!$prepared) {
             throw new Exception("Error preparing statement.");
         }
+        $this->prepared = $prepared;
+
         return $prepared;
     }
 
@@ -64,9 +67,9 @@ class PgSqlSwoolePdo extends PDO
      * @return string|void
      * @throws Exception
      */
-    public function lastInsertId($name = null)
+    public function lastInsertId($name = null): ?int
     {
-        throw new Exception("Error, you must override this method!");
+        return $this->prepared->getLastInsertId();
     }
 
     public function commit(): void
