@@ -4,24 +4,18 @@ namespace KevinFarias\PgSqlSwoole;
 
 use Exception;
 use PDO;
+use Swoole\Coroutine;
 use Swoole\Coroutine\PostgreSQL;
 use Swoole\Coroutine\PostgreSQLStatement;
 
 class PgSqlSwoolePdo extends PDO
 {
-    protected $connection;
-    protected ?PgSqlSwoolePdoStatement $prepared;
+    protected array $connections = [];
+    protected array $prepared = [];
 
-    public function __construct($dsn, $options = [])
+    public function __construct(private string $dsn, private array $options = [])
     {
-        $pg = new PostgreSQL();
-
-        $connect = $pg->connect($dsn);
-        if (!$connect) {
-            throw new Exception("Error connecting to PostgreSQL server.");
-        }
-
-        $this->setConnection($pg);
+        $this->getConnection();
     }
 
     public function exec(string $statement): int|false
@@ -30,7 +24,7 @@ class PgSqlSwoolePdo extends PDO
         if (!$exec) {
             return false;
         }
-        return $this->prepared->rowCount();
+        return $this->prepared[$this->getPid()]->rowCount();
     }
 
     public function prepare(string $statement, $driver_options = null): PgSqlSwoolePdoStatement|false
@@ -39,9 +33,14 @@ class PgSqlSwoolePdo extends PDO
         if (!$prepared) {
             throw new Exception("Error preparing statement: ".$this->getConnection()->error);
         }
-        $this->prepared = $prepared;
+        $this->prepared[$this->getPid()] = $prepared;
 
         return $prepared;
+    }
+
+    private function getPid(): int
+    {
+        return Coroutine::getCid() ?? -1;
     }
 
     /**
@@ -49,7 +48,22 @@ class PgSqlSwoolePdo extends PDO
      */
     public function getConnection(): PostgreSQL
     {
-        return $this->connection;
+        if (isset($this->connections[$this->getPid()]))
+            return $this->connections[$this->getPid()];
+
+        $connection = new PostgreSQL();
+        $connect = $connection->connect($this->dsn);
+        if (!$connect) {
+            throw new Exception("Error connecting to database: ".$connection->error);
+        }
+
+        $this->connections[$this->getPid()] = $connection;
+
+        Coroutine::defer(function () use ($connection) {
+            $this->connection = null;
+        });
+
+        return $connection;
     }
 
     /**
@@ -57,7 +71,7 @@ class PgSqlSwoolePdo extends PDO
      */
     public function setConnection($connection): void
     {
-        $this->connection = $connection;
+        $this->connections[$this->getPid()] = $connection;
     }
 
     /**
@@ -67,7 +81,7 @@ class PgSqlSwoolePdo extends PDO
      */
     public function lastInsertId(?string $name = null): string|false
     {
-        $id = $this->prepared->getLastInsertId();
+        $id = $this->prepared[$this->getPid()]->getLastInsertId();
         if (!$id) {
             return false;
         }

@@ -5,6 +5,7 @@ namespace KevinFarias\PgSqlSwoole;
 use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\ServiceProvider;
+use Swoole\Coroutine;
 
 class PgSqlSwooleServiceProvider extends ServiceProvider
 {
@@ -23,6 +24,7 @@ class PgSqlSwooleServiceProvider extends ServiceProvider
             $db->extend('pgsql-swoole', function ($config, $name) {
                 $pdoConnection = (new PgSqlSwooleConnector())->connect($config);
                 $connection = new PgSqlSwooleConnection($pdoConnection, $config['database'], isset($config['prefix']) ? $config['prefix'] : '', $config);
+
                 return $connection;
             });
         });
