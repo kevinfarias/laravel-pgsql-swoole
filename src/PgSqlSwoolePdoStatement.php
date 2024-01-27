@@ -22,6 +22,7 @@ class PgSqlSwoolePdoStatement extends PDOStatement
     private string $operation = '';
     private ?int $last_insert_id = null;
     private mixed $resultSert;
+    private bool $hasParams = false;
 
     public function __construct(PostgreSQL $conn, $query)
     {
@@ -31,62 +32,62 @@ class PgSqlSwoolePdoStatement extends PDOStatement
 
         $statement = $conn->prepare($this->query);
         if (!$statement) {
-            throw new \Exception("Error preparing statement (Query: ".$this->query."): ".$conn->error);
+            throw new \Exception("Error preparing statement (Query: ".$this->query."): ".json_encode([$conn->error, $conn->errCode, $conn->notices, $conn->prepare($this->query), $conn, $conn->query($this->query)]));
         }
         $this->statement = $statement;
     }
 
-    public function errorCode()
+    public function errorCode(): ?string
     {
-        return $this->statement->errno;
+        return $this->statement->errCode ?? null;
     }
 
-    public function errorInfo()
+    public function errorInfo(): array
     {
-        return $this->statement->error;
+        return $this->statement->error ?? [];
     }
 
-    public function rowCount()
+    public function rowCount(): int
     {
         return $this->statement->affectedRows();
     }
 
-    public function bindParam($parameter, &$variable, $type = null, $maxlen = null, $driverdata = null)
+    public function bindParam(string|int $param, mixed &$var, int $type = PDO::PARAM_STR, int $maxLength = 0, mixed $driverOptions = null): bool
     {
-        if (! is_string($parameter) && ! is_int($parameter)) {
+        if (! is_string($param) && ! is_int($param)) {
             return false;
         }
 
-        $parameter = ltrim($parameter, ':');
-        $this->params[$parameter] = &$variable;
+        $param = ltrim($param, ':');
+        $this->params[$param] = &$var;
 
         return true;
     }
 
-    public function bindValue($parameter, $variable, $type = null)
+    public function bindValue(string|int $param, mixed $value, int $type = PDO::PARAM_STR): bool
     {
-        if (! is_string($parameter) && ! is_int($parameter)) {
+        if (! is_string($param) && ! is_int($param)) {
             return false;
         }
 
-        if (is_object($variable)) {
-            if (! method_exists($variable, '__toString')) {
+        if (is_object($value)) {
+            if (! method_exists($value, '__toString')) {
                 return false;
             } else {
-                $variable = (string) $variable;
+                $value = (string) $value;
             }
         }
 
-        $parameter = ltrim($parameter, ':');
-        $this->params[$parameter] = $variable;
+        $param = ltrim($param, ':');
+        $this->params[$param] = $value;
 
         return true;
     }
 
-    public function execute($inputParameters = null)
+    public function execute(?array $params = null): bool
     {
-        if (! empty($inputParameters)) {
-            foreach ($inputParameters as $key => $value) {
+        if (! empty($params)) {
+            foreach ($params as $key => $value) {
                 $this->bindParam($key, $value);
             }
         }
@@ -97,7 +98,7 @@ class PgSqlSwoolePdoStatement extends PDOStatement
         $this->afterExecute();
 
         if ($result === false) {
-            throw new \PDOException($this->errorInfo(), $this->errorCode());
+            throw new \PDOException("Query: {$this->query}, error: ".json_encode([$this->statement->notices, $this->errorInfo()]), $this->errorCode());
         }
 
         return $ok;
@@ -116,7 +117,7 @@ class PgSqlSwoolePdoStatement extends PDOStatement
     }
 
 
-    public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args)
+    public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
     {
         $mode = match ($mode ?? $this->fetchMode) {
             PDO::FETCH_ASSOC => SW_PGSQL_ASSOC,
@@ -127,7 +128,7 @@ class PgSqlSwoolePdoStatement extends PDOStatement
         return $this->statement->fetchAll($mode);
     }
 
-    public function fetch($option = null, $ignore = null, $ignore2 = null)
+    public function fetch(int $mode = PDO::FETCH_DEFAULT, int $cursorOrientation = PDO::FETCH_ORI_NEXT, int $cursorOffset = 0): mixed
     {
         return $this->statement->fetchArray();
     }
@@ -157,6 +158,8 @@ class PgSqlSwoolePdoStatement extends PDOStatement
                 $query .= $char;
             }
         }
+
+        $this->hasParams = $paramIndex > 1;
 
         return $query;
     }

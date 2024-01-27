@@ -15,6 +15,9 @@ class PgSqlSwooleServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $this->app->singleton('db', function ($app) {
+            return new SwooleDatabaseManager($app, $app['db.factory']);
+        });
         $this->app->resolving('db', function ($db) {
             /** @var DatabaseManager $db */
             $db->extend('pgsql-swoole', function ($config, $name) {

@@ -1,0 +1,11 @@
+{
+ "status": "APPROVE_AND_MAINTAIN",
+ "fields": {
+    "workflow_additional_fields": {
+        {
+          "key": "CAMPO_MONETARIO",
+          "value": 100.5
+        }
+    }
+ }
+}

@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Andrea
- * Date: 23/02/2018
- * Time: 17:50
- */
 
 namespace KevinFarias\PgSqlSwoole;
 
@@ -30,16 +24,20 @@ class PgSqlSwoolePdo extends PDO
         $this->setConnection($pg);
     }
 
-    public function exec($query)
+    public function exec(string $statement): int|false
     {
-        return $this->prepare($query)->execute();
+        $exec = $this->prepare($statement)->execute();
+        if (!$exec) {
+            return false;
+        }
+        return $this->prepared->rowCount();
     }
 
     public function prepare(string $statement, $driver_options = null): PgSqlSwoolePdoStatement|false
     {
         $prepared = new PgSqlSwoolePdoStatement($this->getConnection(), $statement);
         if (!$prepared) {
-            throw new Exception("Error preparing statement.");
+            throw new Exception("Error preparing statement: ".$this->getConnection()->error);
         }
         $this->prepared = $prepared;
 
@@ -67,23 +65,42 @@ class PgSqlSwoolePdo extends PDO
      * @return string|void
      * @throws Exception
      */
-    public function lastInsertId($name = null): ?int
+    public function lastInsertId(?string $name = null): string|false
     {
-        return $this->prepared->getLastInsertId();
+        $id = $this->prepared->getLastInsertId();
+        if (!$id) {
+            return false;
+        }
+        return (string)$id;
     }
 
-    public function commit(): void
+    public function commit(): bool
     {
-        $this->getConnection()->query('COMMIT');
+        try {
+            $this->getConnection()->query('COMMIT');
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
     }
 
-    public function rollBack(): void
+    public function rollBack(): bool
     {
-        $this->getConnection()->query('ROLLBACK');
+        try {
+            $this->getConnection()->query('ROLLBACK');
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
     }
 
-    public function beginTransaction(): void
+    public function beginTransaction(): bool
     {
-        $this->getConnection()->query('BEGIN');
+        try {
+            $this->getConnection()->query('BEGIN');
+            return true;
+        } catch (Exception $e) {
+            return false;
+        }
     }
 }
