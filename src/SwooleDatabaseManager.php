@@ -34,4 +34,9 @@ class SwooleDatabaseManager extends \Illuminate\Database\DatabaseManager
 
         return $this->connections[$prefix.$name];
     }
+
+    public function getPdo()
+    {
+        return $this->connection()->getPdo();
+    }
 }

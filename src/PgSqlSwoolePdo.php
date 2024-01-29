@@ -12,6 +12,7 @@ class PgSqlSwoolePdo extends PDO
 {
     protected array $connections = [];
     protected array $prepared = [];
+    protected array $inTransaction = [];
 
     public function __construct(private string $dsn, private array $options = [])
     {
@@ -92,6 +93,10 @@ class PgSqlSwoolePdo extends PDO
     {
         try {
             $this->getConnection()->query('COMMIT');
+            $this->inTransaction[$this->getPid()] = ($this->inTransaction[$this->getPid()] ?? 1) - 1;
+            if ($this->inTransaction[$this->getPid()] <= 0) {
+                unset($this->inTransaction[$this->getPid()]);
+            }
             return true;
         } catch (Exception $e) {
             return false;
@@ -102,6 +107,10 @@ class PgSqlSwoolePdo extends PDO
     {
         try {
             $this->getConnection()->query('ROLLBACK');
+            $this->inTransaction[$this->getPid()] = ($this->inTransaction[$this->getPid()] ?? 1) - 1;
+            if ($this->inTransaction[$this->getPid()] <= 0) {
+                unset($this->inTransaction[$this->getPid()]);
+            }
             return true;
         } catch (Exception $e) {
             return false;
@@ -112,9 +121,15 @@ class PgSqlSwoolePdo extends PDO
     {
         try {
             $this->getConnection()->query('BEGIN');
+            $this->inTransaction[$this->getPid()] = ($this->inTransaction[$this->getPid()] ?? 0) + 1;
             return true;
         } catch (Exception $e) {
             return false;
         }
+    }
+
+    public function inTransaction(): bool
+    {
+        return isset($this->inTransaction[$this->getPid()]);
     }
 }

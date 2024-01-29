@@ -78,6 +78,10 @@ class PgSqlSwoolePdoStatement extends PDOStatement
             }
         }
 
+        if (is_array($value)) {
+            $value = json_encode($value);
+        }
+
         $param = ltrim($param, ':');
         $this->params[$param] = $value;
 
@@ -92,7 +96,11 @@ class PgSqlSwoolePdoStatement extends PDOStatement
             }
         }
 
-        $result = $this->statement->execute($this->params);
+        try {
+            $result = $this->statement->execute($this->params);
+        } catch (\Throwable $e) {
+            dd($this->params, $e);
+        }
         $this->resultSert = ($ok = $result !== false) ? $result : [];
 
         $this->afterExecute();
