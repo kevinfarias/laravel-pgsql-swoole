@@ -127,12 +127,22 @@ class PgSqlSwoolePdoStatement extends PDOStatement
 
     public function fetchAll(int $mode = PDO::FETCH_DEFAULT, mixed ...$args): array
     {
-        $mode = match ($mode ?? $this->fetchMode) {
+        $mode = match (isset(func_get_args()[0]) ? ($mode ?? $this->fetchMode) : $this->fetchMode) {
             PDO::FETCH_ASSOC => SW_PGSQL_ASSOC,
             PDO::FETCH_NUM => SW_PGSQL_NUM,
             PDO::FETCH_BOTH => SW_PGSQL_BOTH,
+            PDO::FETCH_OBJ => 'object',
             default => SW_PGSQL_ASSOC,
         };
+        if ($mode === 'object') {
+            $rows = [];
+            while ($row = $this->statement->fetchObject()) {
+                $rows[] = $row;
+            }
+
+            return $rows;
+        }
+
         return $this->statement->fetchAll($mode);
     }
 
