@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: Andrea
- * Date: 23/02/2018
- * Time: 17:51
- */
 
 namespace KevinFarias\PgSqlSwoole;
 
@@ -23,6 +17,7 @@ class PgSqlSwoolePdoStatement extends PDOStatement
     private ?int $last_insert_id = null;
     private mixed $resultSert;
     private bool $hasParams = false;
+    private array $namedParamsIndex = [];
 
     public function __construct(PostgreSQL $conn, $query)
     {
@@ -96,8 +91,18 @@ class PgSqlSwoolePdoStatement extends PDOStatement
             }
         }
 
+        $params = $this->params;
+        $isNamedParams = ! empty($this->namedParamsIndex);
+        if ($isNamedParams) {
+            $params = [];
+            foreach ($this->namedParamsIndex as $param => $indexes) {
+                foreach ($indexes as $index) {
+                    $params[$index] = $this->params[$param];
+                }
+            }
+        }
         try {
-            $result = $this->statement->execute($this->params);
+            $result = $this->statement->execute($params);
         } catch (\Throwable $e) {
             dd($this->params, $e);
         }
@@ -171,6 +176,24 @@ class PgSqlSwoolePdoStatement extends PDOStatement
                 $isStringLiteral = ! $isStringLiteral;
             } elseif ($char === '?' && ! $isStringLiteral) { // Substitutable binding...
                 $query .= '$'.$paramIndex;
+                $paramIndex++;
+            } else if ($char === ':' && !$isStringLiteral) {
+                // take complete word
+                $param = '';
+                for ($j = $i + 1; $j < strlen($sql); $j++) {
+                    $nextChar = $sql[$j];
+                    if (preg_match('/[a-zA-Z0-9_]/', $nextChar)) {
+                        $param .= $nextChar;
+                    } else {
+                        break;
+                    }
+                }
+
+                $query .= '$'.$paramIndex;
+                $i += strlen($param);
+
+                $this->namedParamsIndex[$param] = [...($this->namedParamsIndex[$param]??[]), $paramIndex];
+
                 $paramIndex++;
             } else { // Normal character...
                 $query .= $char;
