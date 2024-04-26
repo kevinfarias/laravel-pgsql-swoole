@@ -170,6 +170,7 @@ class PgSqlSwoolePdoStatement extends PDOStatement
         for ($i = 0; $i < strlen($sql); $i++) {
             $char = $sql[$i];
             $nextChar = $sql[$i + 1] ?? null;
+            $prevChar = $sql[$i - 1] ?? null;
 
             if ($char === "'") { // Starting / leaving string literal...
                 $query .= $char;
@@ -177,7 +178,7 @@ class PgSqlSwoolePdoStatement extends PDOStatement
             } elseif ($char === '?' && ! $isStringLiteral) { // Substitutable binding...
                 $query .= '$'.$paramIndex;
                 $paramIndex++;
-            } else if ($char === ':' && !$isStringLiteral) {
+            } else if ($char === ':' && $nextChar != ':' && $prevChar != ':' && !$isStringLiteral) {
                 // take complete word
                 $param = '';
                 for ($j = $i + 1; $j < strlen($sql); $j++) {
