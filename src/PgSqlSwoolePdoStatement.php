@@ -39,6 +39,10 @@ class PgSqlSwoolePdoStatement extends PDOStatement
 
     public function errorInfo(): array
     {
+        if (is_string($this->statement->error)) {
+            return [$this->statement->error];
+        }
+
         return $this->statement->error ?? [];
     }
 
